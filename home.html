@@ -1,131 +1,101 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>Stern Show Archive</title>
 
 <style>
 
-*{
-margin:0;
-padding:0;
-box-sizing:border-box;
-}
-
 body{
-background:#111827;
-font-family:Segoe UI,sans-serif;
-color:white;
+    margin:0;
+    background:#111827;
+    color:white;
+    font-family:Segoe UI,sans-serif;
 }
 
 header{
-background:#0f172a;
-padding:20px;
-border-bottom:1px solid #334155;
+    background:#0f172a;
+    padding:20px;
+    border-bottom:1px solid #334155;
 }
 
 h1{
-font-size:32px;
+    margin:0;
 }
 
-.search{
-margin-top:10px;
-width:100%;
-padding:12px;
-border:none;
-border-radius:10px;
-font-size:16px;
+#search{
+    margin-top:10px;
+    width:100%;
+    padding:10px;
+    border:none;
+    border-radius:8px;
 }
 
 .container{
-display:grid;
-grid-template-columns:250px 1fr;
-height:calc(100vh - 90px);
+    display:flex;
+    height:calc(100vh - 120px);
 }
 
 .sidebar{
-background:#1e293b;
-overflow:auto;
-padding:15px;
+    width:250px;
+    background:#1e293b;
+    overflow:auto;
 }
 
 .year{
-padding:12px;
-margin-bottom:8px;
-background:#334155;
-border-radius:8px;
-cursor:pointer;
-transition:.2s;
+    padding:15px;
+    border-bottom:1px solid #334155;
+    cursor:pointer;
 }
 
 .year:hover{
-background:#475569;
+    background:#334155;
 }
 
-.content{
-padding:20px;
-overflow:auto;
+.main{
+    flex:1;
+    overflow:auto;
+    padding:20px;
 }
 
-.card{
-background:#1e293b;
-padding:16px;
-border-radius:12px;
-margin-bottom:15px;
-cursor:pointer;
+.episode{
+    background:#1e293b;
+    padding:12px;
+    border-radius:8px;
+    margin-bottom:8px;
+    cursor:pointer;
 }
 
-.card:hover{
-background:#334155;
+.episode:hover{
+    background:#334155;
 }
 
 .progress{
-height:6px;
-background:#0f172a;
-border-radius:50px;
-overflow:hidden;
-margin-top:10px;
+    font-size:12px;
+    color:#4ade80;
 }
 
-.progress-fill{
-height:100%;
-background:#22c55e;
-width:0%;
-}
-
-#player{
-position:fixed;
-bottom:0;
-left:0;
-width:100%;
-background:#020617;
-padding:15px;
-border-top:1px solid #334155;
+.player{
+    position:fixed;
+    bottom:0;
+    left:0;
+    right:0;
+    background:#020617;
+    padding:15px;
+    border-top:1px solid #334155;
 }
 
 audio{
-width:100%;
+    width:100%;
 }
 
-@media(max-width:768px){
-
-.container{
-grid-template-columns:1fr;
+button{
+    padding:10px;
+    margin:5px;
 }
 
-.sidebar{
-display:flex;
-overflow-x:auto;
-white-space:nowrap;
-}
-
-.year{
-display:inline-block;
-margin-right:10px;
-}
-
-}
 </style>
 </head>
 
@@ -136,9 +106,8 @@ margin-right:10px;
 <h1>📻 Stern Show Archive</h1>
 
 <input
-class="search"
-id="searchBox"
-placeholder="Search all episodes..."
+id="search"
+placeholder="Search Episodes..."
 >
 
 </header>
@@ -156,31 +125,140 @@ placeholder="Search all episodes..."
 
 </div>
 
-<div class="content">
+<div class="main">
 
 <h2>Continue Listening</h2>
 
-<div id="continueListening"></div>
+<div id="continue"></div>
 
-<h2 style="margin-top:25px;">
-Episodes
-</h2>
+<h2>Episodes</h2>
 
-<div id="episodeList"></div>
+<div id="episodes"></div>
 
 </div>
 
 </div>
 
-<div id="player">
+<div class="player">
 
 <div id="nowPlaying">
 Nothing Playing
 </div>
 
-<audio id="audio" controls></audio>
+<audio
+id="audio"
+controls>
+</audio>
+
+<br>
+
+<button onclick="skip(-30)">
+⏪ 30s
+</button>
+
+<button onclick="skip(30)">
+⏩ 30s
+</button>
 
 </div>
+
+<script>
+
+const sampleEpisodes=[
+
+{
+title:"1999-01-04_BOS_CF",
+url:"https://drive.google.com/uc?export=download&id=1Rrm_NuH-ppWj2wixIeRvV3_CwGsEj4IS"
+},
+
+{
+title:"1999-01-05_BOS_CF",
+url:"https://drive.google.com/uc?export=download&id=1Rrm_NuH-ppWj2wixIeRvV3_CwGsEj4IS"
+}
+
+];
+
+const audio=
+document.getElementById("audio");
+
+const list=
+document.getElementById("episodes");
+
+function render(){
+
+list.innerHTML="";
+
+sampleEpisodes.forEach(ep=>{
+
+let saved=
+localStorage.getItem(ep.title)||0;
+
+let div=document.createElement("div");
+
+div.className="episode";
+
+div.innerHTML=
+`
+<strong>${ep.title}</strong>
+<div class="progress">
+Saved Position:
+${Math.floor(saved/60)} min
+</div>
+`;
+
+div.onclick=()=>play(ep);
+
+list.appendChild(div);
+
+});
+
+}
+
+function play(ep){
+
+audio.src=ep.url;
+
+document.getElementById(
+"nowPlaying"
+).innerText=ep.title;
+
+audio.onloadedmetadata=()=>{
+
+let pos=
+localStorage.getItem(
+ep.title
+);
+
+if(pos){
+
+audio.currentTime=pos;
+
+}
+
+audio.play();
+
+};
+
+audio.ontimeupdate=()=>{
+
+localStorage.setItem(
+ep.title,
+audio.currentTime
+);
+
+};
+
+}
+
+function skip(sec){
+
+audio.currentTime+=sec;
+
+}
+
+render();
+
+</script>
 
 </body>
 </html>
